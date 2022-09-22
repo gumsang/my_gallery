@@ -132,6 +132,23 @@ class _CreatePageState extends State<CreatePage> {
     }
   }
 
+  void setTimer() {
+    timer?.cancel();
+    timer = Timer.periodic(const Duration(seconds: 3), ((timer) {
+      if (_image.isNotEmpty && _currentIndex == _image.length - 1) {
+        setState(() {
+          _currentIndex = 0;
+        });
+      } else if (_image.isEmpty) {
+        _currentIndex = 0;
+      } else {
+        setState(() {
+          _currentIndex++;
+        });
+      }
+    }));
+  }
+
   Future addImages() async {
     final List<XFile>? image = await _picker.pickMultiImage();
     if (image != null) {
@@ -139,38 +156,11 @@ class _CreatePageState extends State<CreatePage> {
         _currentIndex = 0;
         _image.addAll(image);
       });
-      timer?.cancel();
-      timer = Timer.periodic(const Duration(seconds: 3), ((timer) {
-        if (_image.isNotEmpty && _currentIndex == _image.length - 1) {
-          setState(() {
-            _currentIndex = 0;
-          });
-        } else if (_image.isEmpty) {
-          _currentIndex = 0;
-        } else {
-          setState(() {
-            _currentIndex++;
-          });
-        }
-      }));
+      setTimer();
     }
   }
 
   void _goForward() {
-    timer?.cancel();
-    timer = Timer.periodic(const Duration(seconds: 3), ((timer) {
-      if (_image.isNotEmpty && _currentIndex == _image.length - 1) {
-        setState(() {
-          _currentIndex = 0;
-        });
-      } else if (_image.isEmpty) {
-        _currentIndex = 0;
-      } else {
-        setState(() {
-          _currentIndex++;
-        });
-      }
-    }));
     setState(() {
       if (_currentIndex == _image.length - 1) {
         _currentIndex = 0;
@@ -178,23 +168,10 @@ class _CreatePageState extends State<CreatePage> {
         _currentIndex++;
       }
     });
+    setTimer();
   }
 
   void _goBack() {
-    timer?.cancel();
-    timer = Timer.periodic(const Duration(seconds: 3), ((timer) {
-      if (_image.isNotEmpty && _currentIndex == _image.length - 1) {
-        setState(() {
-          _currentIndex = 0;
-        });
-      } else if (_image.isEmpty) {
-        _currentIndex = 0;
-      } else {
-        setState(() {
-          _currentIndex++;
-        });
-      }
-    }));
     setState(() {
       if (_currentIndex == 0) {
         _currentIndex = _image.length - 1;
@@ -202,5 +179,6 @@ class _CreatePageState extends State<CreatePage> {
         _currentIndex--;
       }
     });
+    setTimer();
   }
 }
