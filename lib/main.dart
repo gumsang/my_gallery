@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -34,12 +35,13 @@ class _CreatePageState extends State<CreatePage> {
   final ImagePicker _picker = ImagePicker();
 
   final List<XFile> _image = [];
-  // The index starts at 0 and is set to 1 because of additions
-  final int _currentIndex = 1;
+  Timer? timer;
+  int _currentIndex = 0;
 
   @override
   void dispose() {
     textEditingController.dispose();
+
     super.dispose();
   }
 
@@ -48,12 +50,6 @@ class _CreatePageState extends State<CreatePage> {
     return Scaffold(
       appBar: _buildAppBar(),
       body: _buildbody(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          selectImages();
-        },
-        child: const Icon(Icons.add_a_photo),
-      ),
     );
   }
 
@@ -61,8 +57,16 @@ class _CreatePageState extends State<CreatePage> {
     return AppBar(
       actions: [
         IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.send),
+          onPressed: () {
+            selectImages();
+          },
+          icon: const Icon(Icons.add_a_photo),
+        ),
+        IconButton(
+          onPressed: () {
+            addImages();
+          },
+          icon: const Icon(Icons.add_box_outlined),
         )
       ],
     );
@@ -75,16 +79,29 @@ class _CreatePageState extends State<CreatePage> {
           // _image == null ? const Text('No Image') : Image.file(_image!),
           _image.isEmpty
               ? const Text('No Image')
-              : GridView.builder(
-                  scrollDirection: Axis.vertical,
-                  shrinkWrap: true,
-                  itemCount: _image.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3),
-                  itemBuilder: (BuildContext context, int index) {
-                    return Image.file(File(_image[index].path),
-                        fit: BoxFit.cover);
-                  })
+              : GestureDetector(
+                  onHorizontalDragEnd: (dragEndDetails) {
+                    if (dragEndDetails.primaryVelocity! < 0) {
+                      // Page forwards
+
+                      _goForward();
+                    } else if (dragEndDetails.primaryVelocity! > 0) {
+                      // Page backwards
+
+                      _goBack();
+                    }
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOutCubic,
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height,
+                    child: Image.file(
+                      File(_image[_currentIndex].path),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
         ],
       ),
     );
@@ -92,10 +109,98 @@ class _CreatePageState extends State<CreatePage> {
 
   Future selectImages() async {
     final List<XFile>? image = await _picker.pickMultiImage();
-    if (image!.isNotEmpty) {
+    if (image != null) {
       setState(() {
+        _currentIndex = 0;
+        _image.clear();
         _image.addAll(image);
       });
+      timer?.cancel();
+      timer = Timer.periodic(const Duration(seconds: 3), ((timer) {
+        if (_image.isNotEmpty && _currentIndex == _image.length - 1) {
+          setState(() {
+            _currentIndex = 0;
+          });
+        } else if (_image.isEmpty) {
+          _currentIndex = 0;
+        } else {
+          setState(() {
+            _currentIndex++;
+          });
+        }
+      }));
     }
+  }
+
+  Future addImages() async {
+    final List<XFile>? image = await _picker.pickMultiImage();
+    if (image != null) {
+      setState(() {
+        _currentIndex = 0;
+        _image.addAll(image);
+      });
+      timer?.cancel();
+      timer = Timer.periodic(const Duration(seconds: 3), ((timer) {
+        if (_image.isNotEmpty && _currentIndex == _image.length - 1) {
+          setState(() {
+            _currentIndex = 0;
+          });
+        } else if (_image.isEmpty) {
+          _currentIndex = 0;
+        } else {
+          setState(() {
+            _currentIndex++;
+          });
+        }
+      }));
+    }
+  }
+
+  void _goForward() {
+    timer?.cancel();
+    timer = Timer.periodic(const Duration(seconds: 3), ((timer) {
+      if (_image.isNotEmpty && _currentIndex == _image.length - 1) {
+        setState(() {
+          _currentIndex = 0;
+        });
+      } else if (_image.isEmpty) {
+        _currentIndex = 0;
+      } else {
+        setState(() {
+          _currentIndex++;
+        });
+      }
+    }));
+    setState(() {
+      if (_currentIndex == _image.length - 1) {
+        _currentIndex = 0;
+      } else {
+        _currentIndex++;
+      }
+    });
+  }
+
+  void _goBack() {
+    timer?.cancel();
+    timer = Timer.periodic(const Duration(seconds: 3), ((timer) {
+      if (_image.isNotEmpty && _currentIndex == _image.length - 1) {
+        setState(() {
+          _currentIndex = 0;
+        });
+      } else if (_image.isEmpty) {
+        _currentIndex = 0;
+      } else {
+        setState(() {
+          _currentIndex++;
+        });
+      }
+    }));
+    setState(() {
+      if (_currentIndex == 0) {
+        _currentIndex = _image.length - 1;
+      } else {
+        _currentIndex--;
+      }
+    });
   }
 }
